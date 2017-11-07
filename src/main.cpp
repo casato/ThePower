@@ -6,14 +6,16 @@
  */
 
 #include <iostream>
+#include <algorithm>
 #include <glad/glad.h>
 
 #include "GLSL.h"
 #include "Program.h"
 #include "MatrixStack.h"
 #include "Shape.h"
+#include "Texture.h"
+#include "Particle.h"
 #include "WindowManager.h"
-#include "GLTextureWriter.h"
 
 // value_ptr for glm
 #include <glm/gtc/type_ptr.hpp>
@@ -32,72 +34,59 @@ public:
 
 	// Our shader program
 	std::shared_ptr<Program> prog;
-	std::shared_ptr<Program> texProg;
 
-	// Shapes to be used (from obj file)
-	std::vector<shared_ptr<Shape>> AllShapes;
-	//meshes with just one shape
-	shared_ptr<Shape> world;
-	shared_ptr<Shape> Nef;
+	std::vector<std::shared_ptr<Particle>> particles;
 
-	//ground plane info
-	GLuint GrndBuffObj, GrndNorBuffObj, GrndTexBuffObj, GIndxBuffObj;
-	int gGiboLen;
+	// CPU array for particles - redundant with particle structure
+	// but simple
+	int numP = 300;
+	GLfloat points[900];
+	GLfloat pointColors[1200];
+
+	GLuint pointsbuffer;
+	GLuint colorbuffer;
 
 	// Contains vertex information for OpenGL
 	GLuint VertexArrayID;
 
-	// Data necessary to give our triangle to OpenGL
-	GLuint VertexBufferID;
-
-	//geometry for texture render
-	GLuint quad_VertexArrayID;
-	GLuint quad_vertexbuffer;
-
-	//three different textures
-	shared_ptr<Texture> texture0;
- 	shared_ptr<Texture> texture1;
- 	shared_ptr<Texture> texture2;
+	// OpenGL handle to texture data
+	shared_ptr<Texture> texture;
 
 	int gMat = 0;
 
-	//For each shape, now that they are not resized, they need to be
-	//transformed appropriately to the origin and scaled
-	//transforms for Nef
-	vec3 gTrans = vec3(0);
-	float gScale = 1.0;
+	// Display time to control fps
+	float t0_disp = 0.0f;
+	float t_disp = 0.0f;
 
-	//transforms for the world
-	vec3 gDTrans = vec3(0);
-	float gDScale = 1.0;
+	bool keyToggles[256] = {false};
+	float t = 0.0f; //reset in init
+	float h = 0.01f;
+	glm::vec3 g = glm::vec3(0.0f, -0.01f, 0.0f);
 
-	float cTheta = 0;
-	bool mouseDown = false;
+	float camRot;
 
 
 	void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
 	{
+		keyToggles[key] = ! keyToggles[key];
+
 		if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 		{
 			glfwSetWindowShouldClose(window, GL_TRUE);
 		}
-		else if (key == GLFW_KEY_M && action == GLFW_PRESS)
+
+		if (key == GLFW_KEY_A && action == GLFW_PRESS)
 		{
-			gMat = (gMat + 1) % 4;
+			camRot -= 0.314f;
 		}
-		else if (key == GLFW_KEY_A && action == GLFW_PRESS)
+		if (key == GLFW_KEY_D && action == GLFW_PRESS)
 		{
-			cTheta += 5;
-		}
-		else if (key == GLFW_KEY_D && action == GLFW_PRESS)
-		{
-			cTheta -= 5;
+			camRot += 0.314f;
 		}
 	}
 
 	void scrollCallback(GLFWwindow* window, double deltaX, double deltaY)
 	{
-		cTheta += (float) deltaX;
 	}
 
 	void mouseCallback(GLFWwindow *window, int button, int action, int mods)
@@ -106,14 +95,8 @@ public:
 
 		if (action == GLFW_PRESS)
 		{
-			mouseDown = true;
 			glfwGetCursorPos(window, &posX, &posY);
 			cout << "Pos X " << posX << " Pos Y " << posY << endl;
-		}
-
-		if (action == GLFW_RELEASE)
-		{
-			mouseDown = false;
 		}
 	}
 
@@ -125,23 +108,18 @@ public:
 	// Code to load in the three textures
 	void initTex(const std::string& resourceDirectory)
 	{
-	 	texture0 = make_shared<Texture>();
-		texture0->setFilename(resourceDirectory + "/crate.jpg");
-		texture0->init();
-		texture0->setUnit(0);
-		texture0->setWrapModes(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+	}
 
-		texture1 = make_shared<Texture>();
-		texture1->setFilename(resourceDirectory + "/world.jpg");
-		texture1->init();
-		texture1->setUnit(1);
-		texture1->setWrapModes(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+	void initParticles()
+	{
+		int n = numP;
 
-		texture2 = make_shared<Texture>();
-		texture2->setFilename(resourceDirectory + "/grass.jpg");
-		texture2->init();
-		texture2->setUnit(2);
-		texture2->setWrapModes(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+		for (int i = 0; i < n; ++ i)
+		{
+			auto particle = make_shared<Particle>();
+			particles.push_back(particle);
+			particle->load();
+		}
 	}
 
 	//code to set up the two shaders - a diffuse shader and texture mapping
@@ -151,7 +129,6 @@ public:
 		glfwGetFramebufferSize(windowManager->getHandle(), &width, &height);
 		GLSL::checkVersion();
 
-		cTheta = 0;
 		// Set background color.
 		glClearColor(.12f, .34f, .56f, 1.0f);
 		// Enable z-buffer test.
@@ -174,196 +151,78 @@ public:
 		prog->addUniform("MatDif");
 		prog->addAttribute("vertPos");
 		prog->addAttribute("vertNor");
-
-		//initialize the textures we might use
-		initTex(resourceDirectory);
-
-		texProg = make_shared<Program>();
-		texProg->setVerbose(true);
-		texProg->setShaderNames(
-			resourceDirectory + "/tex_vert.glsl",
-			resourceDirectory + "/tex_frag0.glsl");
-		if (! texProg->init())
-		{
-			std::cerr << "One or more shaders failed to compile... exiting!" << std::endl;
-			exit(1);
-		}
- 		texProg->addUniform("P");
-		texProg->addUniform("MV");
-		texProg->addAttribute("vertPos");
-		texProg->addAttribute("vertNor");
-		texProg->addAttribute("vertTex");
-		texProg->addUniform("Texture0");
 	 }
 
 	void initGeom(const std::string& resourceDirectory)
 	{
-		// Load geometry
-		// Some obj files contain material information.
-		// We'll ignore them for this assignment.
-		// this is the tiny obj shapes - not to be confused with our shapes
-		vector<tinyobj::shape_t> TOshapes;
-		vector<tinyobj::material_t> objMaterials;
+		// generate the VAO
+		CHECKED_GL_CALL(glGenVertexArrays(1, &VertexArrayID));
+		CHECKED_GL_CALL(glBindVertexArray(VertexArrayID));
 
-		string errStr;
-		//load in the mesh and make the shapes
-		bool rc = tinyobj::LoadObj(TOshapes, objMaterials, errStr,
-						(resourceDirectory + "/dummy.obj").c_str());
+		// generate vertex buffer to hand off to OGL - using instancing
+		CHECKED_GL_CALL(glGenBuffers(1, &pointsbuffer));
+		// set the current state to focus on our vertex buffer
+		CHECKED_GL_CALL(glBindBuffer(GL_ARRAY_BUFFER, pointsbuffer));
+		// actually memcopy the data - only do this once
+		CHECKED_GL_CALL(glBufferData(GL_ARRAY_BUFFER, sizeof(points), NULL, GL_STREAM_DRAW));
 
-		if (!rc)
-		{
-			cerr << errStr << endl;
-		}
-		else
-		{
-			// some data to keep track of where our mesh is in space
-			vec3 Gmin, Gmax;
-			Gmin = vec3(std::numeric_limits<float>::max());
-			Gmax = vec3(-std::numeric_limits<float>::max());
-			for (size_t i = 0; i < TOshapes.size(); i++)
-			{
-				// TODO -- Initialize each mesh
-				// 1. make a shared pointer
-				// 2. createShape for each tiny obj shape
-				// 3. measure each shape to find out its AABB
-				// 4. call init on each shape to create the GPU data
-				// perform some record keeping to keep track of global min and max
-
-				// Add the shape to AllShapes
-			}
-
-			// think about scale and translate....
-			// based on the results of calling measure on each peice
-		}
-
-		// now read in the sphere for the world
-		rc = tinyobj::LoadObj(TOshapes, objMaterials, errStr,
-						(resourceDirectory + "/sphere.obj").c_str());
-
-		world =  make_shared<Shape>();
-		world->createShape(TOshapes[0]);
-		world->measure();
-		world->init();
-
-		// compute its transforms based on measuring it
-		gDTrans = world->min + 0.5f*(world->max - world->min);
-		if (world->max.x >world->max.y && world->max.x > world->max.z)
-		{
-			gDScale = 2.0/(world->max.x-world->min.x);
-		}
-		else if (world->max.y > world->max.x && world->max.y > world->max.z)
-		{
-			gDScale = 2.0/(world->max.y-world->min.y);
-		}
-		else
-		{
-			gDScale = 2.0/(world->max.z-world->min.z);
-		}
-
-		// now read in the Nefertiti model
-		rc = tinyobj::LoadObj(TOshapes, objMaterials, errStr,
-						(resourceDirectory + "/Nefertiti-100K.obj").c_str());
-
-		Nef = make_shared<Shape>();
-		Nef->createShape(TOshapes[0]);
-		Nef->measure();
-		Nef->init();
-
-		// compute its transforms based on measuring it
-		gTrans = Nef->min + 0.5f * (Nef->max - Nef->min);
-		if (Nef->max.x > Nef->max.y && Nef->max.x > Nef->max.z)
-		{
-			gScale = 2.0 / (Nef->max.x - Nef->min.x);
-		}
-		else if (Nef->max.y > Nef->max.x && Nef->max.y > Nef->max.z)
-		{
-			gScale = 2.0 / (Nef->max.y - Nef->min.y);
-		}
-		else
-		{
-			gScale = 2.0 / (Nef->max.z - Nef->min.z);
-		}
-
-		// Initialize the geometry to render a ground plane
-		initQuad();
+		CHECKED_GL_CALL(glGenBuffers(1, &colorbuffer));
+		// set the current state to focus on our vertex buffer
+		CHECKED_GL_CALL(glBindBuffer(GL_ARRAY_BUFFER, colorbuffer));
+		// actually memcopy the data - only do this once
+		CHECKED_GL_CALL(glBufferData(GL_ARRAY_BUFFER, sizeof(pointColors), NULL, GL_STREAM_DRAW));
 	}
 
-	/**** geometry set up for ground plane *****/
-	void initQuad()
+	// Note you could add scale later for each particle - not implemented
+	void updateGeom()
 	{
-		float g_groundSize = 20;
-		float g_groundY = -1.5;
+		glm::vec3 pos;
+		glm::vec4 col;
 
-		// A x-z plane at y = g_groundY of dim[-g_groundSize, g_groundSize]^2
-		float GrndPos[] = {
-			-g_groundSize, g_groundY, -g_groundSize,
-			-g_groundSize, g_groundY,  g_groundSize,
-			 g_groundSize, g_groundY,  g_groundSize,
-			 g_groundSize, g_groundY, -g_groundSize
-		};
+		// go through all the particles and update the CPU buffer
+		for (int i = 0; i < numP; i++)
+		{
+			pos = particles[i]->getPosition();
+			col = particles[i]->getColor();
+			points[i*3+0] =pos.x;
+			points[i*3+1] =pos.y;
+			points[i*3+2] =pos.z;
+			pointColors[i*4+0] =col.r + col.a/10;
+			pointColors[i*4+1] =col.g + col.g/10;
+			pointColors[i*4+2] =col.b + col.b/10;
+			pointColors[i*4+3] =col.a;
+		}
 
-		float GrndNorm[] = {
-			0, 1, 0,
-			0, 1, 0,
-			0, 1, 0,
-			0, 1, 0,
-			0, 1, 0,
-			0, 1, 0
-		};
+		// update the GPU data
+		glBindBuffer(GL_ARRAY_BUFFER, pointsbuffer);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(points), NULL, GL_STREAM_DRAW);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float)*numP*3, points);
 
-		float GrndTex[] = {
-			0, 0, // back
-			0, 1,
-			1, 1,
-			1, 0
-		};
+		glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(pointColors), NULL, GL_STREAM_DRAW);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float)*numP*4, pointColors);
 
-		unsigned short idx[] = {0, 1, 2, 0, 2, 3};
-
-		GLuint VertexArrayID;
-		//generate the VAO
-		glGenVertexArrays(1, &VertexArrayID);
-		glBindVertexArray(VertexArrayID);
-
-		gGiboLen = 6;
-		glGenBuffers(1, &GrndBuffObj);
-		glBindBuffer(GL_ARRAY_BUFFER, GrndBuffObj);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(GrndPos), GrndPos, GL_STATIC_DRAW);
-
-		glGenBuffers(1, &GrndNorBuffObj);
-		glBindBuffer(GL_ARRAY_BUFFER, GrndNorBuffObj);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(GrndNorm), GrndNorm, GL_STATIC_DRAW);
-
-		glGenBuffers(1, &GrndTexBuffObj);
-		glBindBuffer(GL_ARRAY_BUFFER, GrndTexBuffObj);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(GrndTex), GrndTex, GL_STATIC_DRAW);
-
-		glGenBuffers(1, &GIndxBuffObj);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, GIndxBuffObj);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(idx), idx, GL_STATIC_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 
-	void renderGround()
+	/* note for first update all particles should be "reborn"
+	 * which will initialize their positions */
+	void updateParticles()
 	{
-		glEnableVertexAttribArray(0);
-		glBindBuffer(GL_ARRAY_BUFFER, GrndBuffObj);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+		// update the particles
+		for(auto particle : particles)
+		{
+			particle->update(t, h, g, keyToggles);
+		}
+		t += h;
 
-		glEnableVertexAttribArray(1);
-		glBindBuffer(GL_ARRAY_BUFFER, GrndNorBuffObj);
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+		// Sort the particles by Z
+		auto temp = make_shared<MatrixStack>();
+		temp->rotate(camRot, vec3(0, 1, 0));
 
-		glEnableVertexAttribArray(2);
-		glBindBuffer(GL_ARRAY_BUFFER, GrndTexBuffObj);
-		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, 0);
-
-		// draw!
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, GIndxBuffObj);
-		glDrawElements(GL_TRIANGLES, gGiboLen, GL_UNSIGNED_SHORT, 0);
-
-		glDisableVertexAttribArray(0);
-		glDisableVertexAttribArray(1);
-		glDisableVertexAttribArray(2);
+		ParticleSorter sorter;
+		sorter.C = temp->topMatrix();
+		std::sort(particles.begin(), particles.end(), sorter);
 	}
 
 	void render()
@@ -388,81 +247,43 @@ public:
 		P->pushMatrix();
 		P->perspective(45.0f, aspect, 0.01f, 100.0f);
 
-		//Draw our scene - two meshes and ground plane
+
+		MV->pushMatrix();
+		MV->loadIdentity();
+
+		// camera rotate
+		MV->rotate(camRot, vec3(0, 1, 0));
+
+		// Draw
 		prog->bind();
+		updateParticles();
+		updateGeom();
 		glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, value_ptr(P->topMatrix()));
 
-		// globle transforms for 'camera' (you will likely wantt to fix this)
-		MV->pushMatrix();
-			MV->loadIdentity();
-			MV->rotate(radians(cTheta), vec3(0, 1, 0));
+		glUniformMatrix4fv(prog->getUniform("MV"), 1, GL_FALSE, value_ptr(MV->topMatrix()));
 
-			/* draw left mesh */
-			MV->pushMatrix();
-			MV->translate(vec3(-2, 0.f, -5));
-			MV->rotate(radians(-90.f), vec3(1, 0, 0));
-			MV->scale(gScale);
-			MV->translate(-1.0f*gTrans);
-			SetMaterial(2);
-			glUniformMatrix4fv(prog->getUniform("MV"), 1, GL_FALSE,value_ptr(MV->topMatrix()) );
-			Nef->draw(prog);
-		MV->popMatrix();
+		glEnableVertexAttribArray(0);
+		glBindBuffer(GL_ARRAY_BUFFER, pointsbuffer);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0,(void*)0);
 
-		// TODO add code for the transforms for the dummy and loop over
-		// all the shapes in the dummy to draw it
+		glEnableVertexAttribArray(1);
+		glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
+		glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0,(void*)0);
 
-		MV->popMatrix();
+		glVertexAttribDivisor(0, 1);
+		glVertexAttribDivisor(1, 1);
+		// Draw the points !
+		glDrawArraysInstanced(GL_POINTS, 0, 1, numP);
+
+		glVertexAttribDivisor(0, 0);
+		glVertexAttribDivisor(1, 0);
+		glDisableVertexAttribArray(0);
+		glDisableVertexAttribArray(1);
 		prog->unbind();
 
-		texProg->bind();
-		glUniformMatrix4fv(texProg->getUniform("P"), 1, GL_FALSE, value_ptr(P->topMatrix()));
-
-		MV->pushMatrix();
-			MV->loadIdentity();
-			MV->rotate(radians(cTheta), vec3(0, 1, 0));
-
-			/* draw right mesh */
-			MV->pushMatrix();
-			MV->translate(vec3(2, 0.f, -5));
-			MV->scale(gDScale);
-			MV->translate(-1.0f*gDTrans);
-			glUniformMatrix4fv(prog->getUniform("MV"), 1, GL_FALSE,value_ptr(MV->topMatrix()) );
-			texture1->bind(texProg->getUniform("Texture0"));
-			world->draw(texProg);
-			MV->popMatrix();
-
-			/*draw the ground */
-			glUniformMatrix4fv(texProg->getUniform("MV"), 1, GL_FALSE,value_ptr(MV->topMatrix()) );
-			texture2->bind(texProg->getUniform("Texture0"));
-			renderGround();
-
+		// Pop matrix stacks.
 		MV->popMatrix();
 		P->popMatrix();
-		texProg->unbind();
-	}
-
-	// helper function to set materials for shading
-	void SetMaterial(int i)
-	{
-		switch (i)
-		{
-		case 0: //shiny blue plastic
-			glUniform3f(prog->getUniform("MatAmb"), 0.02f, 0.04f, 0.2f);
-			glUniform3f(prog->getUniform("MatDif"), 0.0f, 0.16f, 0.9f);
-			break;
-		case 1: // flat grey
-			glUniform3f(prog->getUniform("MatAmb"), 0.13f, 0.13f, 0.14f);
-			glUniform3f(prog->getUniform("MatDif"), 0.3f, 0.3f, 0.4f);
-			break;
-		case 2: //brass
-			glUniform3f(prog->getUniform("MatAmb"), 0.3294f, 0.2235f, 0.02745f);
-			glUniform3f(prog->getUniform("MatDif"), 0.7804f, 0.5686f, 0.11373f);
-			break;
-		case 3: //copper
-			glUniform3f(prog->getUniform("MatAmb"), 0.1913f, 0.0735f, 0.0225f);
-			glUniform3f(prog->getUniform("MatDif"), 0.7038f, 0.27048f, 0.0828f);
-			break;
-		}
 	}
 
 };
