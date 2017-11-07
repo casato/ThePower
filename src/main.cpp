@@ -102,7 +102,7 @@ public:
 
 	void resizeCallback(GLFWwindow *window, int width, int height)
 	{
-		glViewport(0, 0, width, height);
+		CHECKED_GL_CALL(glViewport(0, 0, width, height));
 	}
 
 	//code to set up the two shaders - a diffuse shader and texture mapping
@@ -113,13 +113,13 @@ public:
 		GLSL::checkVersion();
 
 		// Set background color.
-		glClearColor(.12f, .34f, .56f, 1.0f);
+		CHECKED_GL_CALL(glClearColor(.12f, .34f, .56f, 1.0f));
 
 		// Enable z-buffer test.
-		glEnable(GL_DEPTH_TEST);
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		glPointSize(14.0f);
+		CHECKED_GL_CALL(glEnable(GL_DEPTH_TEST));
+		CHECKED_GL_CALL(glEnable(GL_BLEND));
+		CHECKED_GL_CALL(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
+		CHECKED_GL_CALL(glPointSize(14.0f));
 
 		// Initialize the GLSL program.
 		prog = make_shared<Program>();
@@ -134,10 +134,8 @@ public:
 		}
 		prog->addUniform("P");
 		prog->addUniform("MV");
-		prog->addUniform("MatAmb");
-		prog->addUniform("MatDif");
+		prog->addUniform("alphaTexture");
 		prog->addAttribute("vertPos");
-		prog->addAttribute("vertNor");
 	}
 
 	// Code to load in the three textures
@@ -203,15 +201,15 @@ public:
 		}
 
 		// update the GPU data
-		glBindBuffer(GL_ARRAY_BUFFER, pointsbuffer);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(points), NULL, GL_STREAM_DRAW);
-		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * numP * 3, points);
+		CHECKED_GL_CALL(glBindBuffer(GL_ARRAY_BUFFER, pointsbuffer));
+		CHECKED_GL_CALL(glBufferData(GL_ARRAY_BUFFER, sizeof(points), NULL, GL_STREAM_DRAW));
+		CHECKED_GL_CALL(glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * numP * 3, points));
 
-		glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(pointColors), NULL, GL_STREAM_DRAW);
-		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * numP * 4, pointColors);
+		CHECKED_GL_CALL(glBindBuffer(GL_ARRAY_BUFFER, colorbuffer));
+		CHECKED_GL_CALL(glBufferData(GL_ARRAY_BUFFER, sizeof(pointColors), NULL, GL_STREAM_DRAW));
+		CHECKED_GL_CALL(glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * numP * 4, pointColors));
 
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		CHECKED_GL_CALL(glBindBuffer(GL_ARRAY_BUFFER, 0));
 	}
 
 	/* note for first update all particles should be "reborn"
@@ -246,7 +244,6 @@ public:
 		// Clear framebuffer.
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		/* Leave this code to just draw the meshes alone */
 		float aspect = width / (float) height;
 
 		// Create the matrix stacks
@@ -267,27 +264,28 @@ public:
 		prog->bind();
 		updateParticles();
 		updateGeom();
-		glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, value_ptr(P->topMatrix()));
 
-		glUniformMatrix4fv(prog->getUniform("MV"), 1, GL_FALSE, value_ptr(MV->topMatrix()));
+		texture->bind(prog->getUniform("alphaTexture"));
+		CHECKED_GL_CALL(glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, value_ptr(P->topMatrix())));
+		CHECKED_GL_CALL(glUniformMatrix4fv(prog->getUniform("MV"), 1, GL_FALSE, value_ptr(MV->topMatrix())));
 
-		glEnableVertexAttribArray(0);
-		glBindBuffer(GL_ARRAY_BUFFER, pointsbuffer);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*) 0);
+		CHECKED_GL_CALL(glEnableVertexAttribArray(0));
+		CHECKED_GL_CALL(glBindBuffer(GL_ARRAY_BUFFER, pointsbuffer));
+		CHECKED_GL_CALL(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*) 0));
 
-		glEnableVertexAttribArray(1);
-		glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
-		glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, (void*) 0);
+		CHECKED_GL_CALL(glEnableVertexAttribArray(1));
+		CHECKED_GL_CALL(glBindBuffer(GL_ARRAY_BUFFER, colorbuffer));
+		CHECKED_GL_CALL(glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, (void*) 0));
 
-		glVertexAttribDivisor(0, 1);
-		glVertexAttribDivisor(1, 1);
+		CHECKED_GL_CALL(glVertexAttribDivisor(0, 1));
+		CHECKED_GL_CALL(glVertexAttribDivisor(1, 1));
 		// Draw the points !
-		glDrawArraysInstanced(GL_POINTS, 0, 1, numP);
+		CHECKED_GL_CALL(glDrawArraysInstanced(GL_POINTS, 0, 1, numP));
 
-		glVertexAttribDivisor(0, 0);
-		glVertexAttribDivisor(1, 0);
-		glDisableVertexAttribArray(0);
-		glDisableVertexAttribArray(1);
+		CHECKED_GL_CALL(glVertexAttribDivisor(0, 0));
+		CHECKED_GL_CALL(glVertexAttribDivisor(1, 0));
+		CHECKED_GL_CALL(glDisableVertexAttribArray(0));
+		CHECKED_GL_CALL(glDisableVertexAttribArray(1));
 		prog->unbind();
 
 		// Pop matrix stacks.
