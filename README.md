@@ -1,5 +1,5 @@
-Lab 9 - Build Instructions
-==========================
+Lab 10 - Build Instructions
+===========================
 
 Lab machines (Linux)
 --------------------
