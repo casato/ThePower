@@ -31,5 +31,6 @@
     <ClInclude Include="Shape.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="WindowManager.h" />
+    <ClInclude Include="GLSL.h" />
   </ItemGroup>
 </Project>

@@ -78,6 +78,7 @@
     <ClCompile Include="WindowManager.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="GLSL.h" />
     <ClInclude Include="MatrixStack.h" />
     <ClInclude Include="Particle.h" />
     <ClInclude Include="Program.h" />
