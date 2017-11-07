@@ -138,8 +138,8 @@ public:
 		prog = make_shared<Program>();
 		prog->setVerbose(true);
 		prog->setShaderNames(
-			resourceDirectory + "/simple_vert.glsl",
-			resourceDirectory + "/simple_frag.glsl");
+			resourceDirectory + "/lab10_vert.glsl",
+			resourceDirectory + "/lab10_frag.glsl");
 		if (! prog->init())
 		{
 			std::cerr << "One or more shaders failed to compile... exiting!" << std::endl;
