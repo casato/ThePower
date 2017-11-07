@@ -4,10 +4,12 @@
 //
 
 #pragma once
-#ifndef _PARTICLE_H_
-#define _PARTICLE_H_
+
+#ifndef LAB471_PARTICLE_H_INCLUDED
+#define LAB471_PARTICLE_H_INCLUDED
 
 #include <vector>
+#include <memory>
 
 #include <glad/glad.h>
 
@@ -20,11 +22,12 @@ class MatrixStack;
 class Program;
 class Texture;
 
+
 class Particle
 {
+
 public:
-	Particle();
-	virtual ~Particle();
+
 	void load();
 	void rebirth(float t);
 	void update(float t, float h, const glm::vec3 &g, const bool *keyToggles);
@@ -33,15 +36,17 @@ public:
 	const vec4 &getColor() const { return color; };
 
 private:
-	float charge; // +1 or -1
-	float m; // mass
-	float d; // viscous damping
-	vec3 x; // position
-	vec3 v; // velocity
-	float lifespan; // how long this particle lives
-	float tEnd;     // time this particle dies
-	float scale;
-	vec4 color;
+
+	float charge = 1.f; // +1 or -1
+	float m = 1.f; // mass
+	float d = 0.f; // viscous damping
+	glm::vec3 x = glm::vec3(0.f); // position
+	glm::vec3 v = glm::vec3(0.f); // velocity
+	float lifespan = 1.f; // how long this particle lives
+	float tEnd = 0.f;     // time this particle dies
+	float scale = 1.f;
+	glm::vec4 color = glm::vec4(1.f);
+
 };
 
 // Sort particles by their z values in camera space
@@ -62,8 +67,9 @@ public:
 		return x0w.z < x1w.z;
 	}
 
-	mat4 C; // current camera matrix
+	// current camera matrix
+	mat4 C;
 
 };
 
-#endif
+#endif // LAB471_PARTICLE_H_INCLUDED
