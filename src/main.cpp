@@ -105,23 +105,6 @@ public:
 		glViewport(0, 0, width, height);
 	}
 
-	// Code to load in the three textures
-	void initTex(const std::string& resourceDirectory)
-	{
-	}
-
-	void initParticles()
-	{
-		int n = numP;
-
-		for (int i = 0; i < n; ++ i)
-		{
-			auto particle = make_shared<Particle>();
-			particles.push_back(particle);
-			particle->load();
-		}
-	}
-
 	//code to set up the two shaders - a diffuse shader and texture mapping
 	void init(const std::string& resourceDirectory)
 	{
@@ -131,8 +114,11 @@ public:
 
 		// Set background color.
 		glClearColor(.12f, .34f, .56f, 1.0f);
+
 		// Enable z-buffer test.
 		glEnable(GL_DEPTH_TEST);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 		// Initialize the GLSL program.
 		prog = make_shared<Program>();
@@ -152,6 +138,28 @@ public:
 		prog->addAttribute("vertPos");
 		prog->addAttribute("vertNor");
 	 }
+
+	// Code to load in the three textures
+	void initTex(const std::string& resourceDirectory)
+	{
+		texture = make_shared<Texture>();
+		texture->setFilename(resourceDirectory + "/alpha.bmp");
+		texture->init();
+		texture->setUnit(0);
+		texture->setWrapModes(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+	}
+
+	void initParticles()
+	{
+		int n = numP;
+
+		for (int i = 0; i < n; ++ i)
+		{
+			auto particle = make_shared<Particle>();
+			particles.push_back(particle);
+			particle->load();
+		}
+	}
 
 	void initGeom(const std::string& resourceDirectory)
 	{
@@ -312,6 +320,8 @@ int main(int argc, char **argv)
 	// may need to initialize or set up different data and state
 
 	application->init(resourceDir);
+	application->initTex(resourceDir);
+	application->initParticles();
 	application->initGeom(resourceDir);
 
 	// Loop until the user closes the window.
