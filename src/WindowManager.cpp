@@ -35,7 +35,7 @@ bool WindowManager::init(int const width, int const height)
 	glfwSetErrorCallback(error_callback);
 
 	// Initialize glfw library
-	if (!glfwInit())
+	if (! glfwInit())
 	{
 		return false;
 	}
@@ -44,10 +44,10 @@ bool WindowManager::init(int const width, int const height)
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 
 	// Create a windowed mode window and its OpenGL context.
-	windowHandle = glfwCreateWindow(width, height, "openGL program", nullptr, nullptr);
+	windowHandle = glfwCreateWindow(width, height, "Particles", nullptr, nullptr);
 	if (! windowHandle)
 	{
 		glfwTerminate();
@@ -57,7 +57,7 @@ bool WindowManager::init(int const width, int const height)
 	glfwMakeContextCurrent(windowHandle);
 
 	// Initialize GLAD
-	if (!gladLoadGL())
+	if (! gladLoadGL())
 	{
 		std::cerr << "Failed to initialize GLAD" << std::endl;
 		return false;
@@ -72,7 +72,7 @@ bool WindowManager::init(int const width, int const height)
 	glfwSetKeyCallback(windowHandle, key_callback);
 	glfwSetMouseButtonCallback(windowHandle, mouse_callback);
 	glfwSetFramebufferSizeCallback(windowHandle, resize_callback);
-   glfwSetScrollCallback(windowHandle, scroll_callback);
+	glfwSetScrollCallback(windowHandle, scroll_callback);
 
 	return true;
 }
