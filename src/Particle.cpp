@@ -26,16 +26,16 @@ void Particle::load()
 // all particles born at the origin
 void Particle::rebirth(float t)
 {
-	charge = randFloat(0.0f, 1.0f) < 0.5 ? -1.0f : 1.0f;	
+	charge = randFloat(0.0f, 1.0f) < 0.5f ? -1.0f : 1.0f;
 	m = 1.0f;
 	d = randFloat(0.0f, 0.02f);
 	x.x = 0;
 	x.y = 0;
-	x.z = randFloat(-3.0, -2.0); 
+	x.z = randFloat(-3.f, -2.f);
 	v.x = randFloat(-0.1f, 0.1f);
 	v.y = randFloat(-0.1f, 0.1f);
 	v.z = randFloat(-0.1f, 0.1f);
-	lifespan = randFloat(100.0f, 200.0f); 
+	lifespan = randFloat(100.f, 200.f);
 	tEnd = t + lifespan;
 
 	scale = randFloat(0.2f, 1.0f);
@@ -47,7 +47,7 @@ void Particle::rebirth(float t)
 
 void Particle::update(float t, float h, const vec3 &g, const bool *keyToggles)
 {
-	if(t > tEnd)
+	if (t > tEnd)
 	{
 		rebirth(t);
 	}

@@ -17,7 +17,7 @@
 #include "Particle.h"
 #include "WindowManager.h"
 
-// value_ptr for glm
+ // value_ptr for glm
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -58,7 +58,7 @@ public:
 	float t0_disp = 0.0f;
 	float t_disp = 0.0f;
 
-	bool keyToggles[256] = {false};
+	bool keyToggles[256] = { false };
 	float t = 0.0f; //reset in init
 	float h = 0.01f;
 	glm::vec3 g = glm::vec3(0.0f, -0.01f, 0.0f);
@@ -137,7 +137,7 @@ public:
 		prog->addUniform("MatDif");
 		prog->addAttribute("vertPos");
 		prog->addAttribute("vertNor");
-	 }
+	}
 
 	// Code to load in the three textures
 	void initTex(const std::string& resourceDirectory)
@@ -192,23 +192,23 @@ public:
 		{
 			pos = particles[i]->getPosition();
 			col = particles[i]->getColor();
-			points[i*3+0] =pos.x;
-			points[i*3+1] =pos.y;
-			points[i*3+2] =pos.z;
-			pointColors[i*4+0] =col.r + col.a/10;
-			pointColors[i*4+1] =col.g + col.g/10;
-			pointColors[i*4+2] =col.b + col.b/10;
-			pointColors[i*4+3] =col.a;
+			points[i * 3 + 0] = pos.x;
+			points[i * 3 + 1] = pos.y;
+			points[i * 3 + 2] = pos.z;
+			pointColors[i * 4 + 0] = col.r + col.a / 10.f;
+			pointColors[i * 4 + 1] = col.g + col.g / 10.f;
+			pointColors[i * 4 + 2] = col.b + col.b / 10.f;
+			pointColors[i * 4 + 3] = col.a;
 		}
 
 		// update the GPU data
 		glBindBuffer(GL_ARRAY_BUFFER, pointsbuffer);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(points), NULL, GL_STREAM_DRAW);
-		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float)*numP*3, points);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * numP * 3, points);
 
 		glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(pointColors), NULL, GL_STREAM_DRAW);
-		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float)*numP*4, pointColors);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * numP * 4, pointColors);
 
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
@@ -218,7 +218,7 @@ public:
 	void updateParticles()
 	{
 		// update the particles
-		for(auto particle : particles)
+		for (auto particle : particles)
 		{
 			particle->update(t, h, g, keyToggles);
 		}
@@ -246,7 +246,7 @@ public:
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		/* Leave this code to just draw the meshes alone */
-		float aspect = width/(float)height;
+		float aspect = width / (float) height;
 
 		// Create the matrix stacks
 		auto P = make_shared<MatrixStack>();
@@ -272,11 +272,11 @@ public:
 
 		glEnableVertexAttribArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, pointsbuffer);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0,(void*)0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*) 0);
 
 		glEnableVertexAttribArray(1);
 		glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
-		glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0,(void*)0);
+		glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, (void*) 0);
 
 		glVertexAttribDivisor(0, 1);
 		glVertexAttribDivisor(1, 1);
@@ -303,7 +303,7 @@ int main(int argc, char **argv)
 
 	if (argc >= 2)
 	{
-			resourceDir = argv[1];
+		resourceDir = argv[1];
 	}
 
 	Application *application = new Application();

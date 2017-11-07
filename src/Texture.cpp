@@ -17,7 +17,7 @@ void Texture::init()
 	int w, h, ncomps;
 	stbi_set_flip_vertically_on_load(true);
 	unsigned char *data = stbi_load(filename.c_str(), &w, &h, &ncomps, 0);
-	if(! data)
+	if (! data)
 	{
 		cerr << filename << " not found" << endl;
 	}
