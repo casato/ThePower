@@ -7,8 +7,12 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <glm/glm.hpp>
+
+#include "tiny_obj_loader.h"
 
 class Program;
+
 
 class Shape
 {
@@ -16,9 +20,14 @@ class Shape
 public:
 
 	void loadMesh(const std::string &meshName);
-	void init();
+	void createShape(tinyobj::shape_t & shape);
 	void resize();
+	void init();
+	void measure();
 	void draw(const std::shared_ptr<Program> prog) const;
+
+	glm::vec3 min = glm::vec3(0);
+	glm::vec3 max = glm::vec3(0);
 
 private:
 

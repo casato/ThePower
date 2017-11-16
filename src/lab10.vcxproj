@@ -75,6 +75,7 @@
     <ClCompile Include="Program.cpp" />
     <ClCompile Include="Shape.cpp" />
     <ClCompile Include="Texture.cpp" />
+    <ClCompile Include="tiny_obj_loader.cpp" />
     <ClCompile Include="WindowManager.cpp" />
   </ItemGroup>
   <ItemGroup>
