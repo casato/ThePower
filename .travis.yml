@@ -2,10 +2,11 @@
 # C++
 language: cpp
 
-# Run on both Ubuntu 14.04 and OS X 10.9.5
+# Run on both Ubuntu 14.04 and OS X 10.12.6
 os:
   - linux
   - osx
+osx_image: xcode8.3
 sudo: required
 dist: trusty
 
