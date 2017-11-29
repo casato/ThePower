@@ -73,6 +73,8 @@ void Shape::resize()
 	float shiftX, shiftY, shiftZ;
 	float epsilon = 0.001f;
 
+	measure();
+
 
 	// From min and max compute necessary scale and shift for each dimension
 	float maxExtent, xExtent, yExtent, zExtent;
