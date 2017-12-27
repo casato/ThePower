@@ -36,7 +36,7 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup>
-    <IncludePath>$(SolutionDir)\ext\glad\include;$(VisualStudioDir)\SDKs\glm-0.9.8.5;$(VisualStudioDir)\SDKs\glfw-3.2.1.bin.WIN64\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)\ext\glad\include;$(SolutionDir)\ext\tiny_obj_loader;$(VisualStudioDir)\SDKs\glm-0.9.8.5;$(VisualStudioDir)\SDKs\glfw-3.2.1.bin.WIN64\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup>
     <LibraryPath>$(VisualStudioDir)\SDKs\glfw-3.2.1.bin.WIN64\lib-vc2015;$(LibraryPath)</LibraryPath>
@@ -50,6 +50,7 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>MSVCRT</IgnoreSpecificDefaultLibraries>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">

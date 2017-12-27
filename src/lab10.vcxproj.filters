@@ -12,7 +12,7 @@
     <ClCompile Include="Shape.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="WindowManager.cpp" />
-    <ClCompile Include="tiny_obj_loader.cpp">
+    <ClCompile Include="..\ext\tiny_obj_loader\tiny_obj_loader.cpp">
       <Filter>ext</Filter>
     </ClCompile>
   </ItemGroup>
@@ -25,9 +25,6 @@
     <ClInclude Include="stb_image.h">
       <Filter>ext</Filter>
     </ClInclude>
-    <ClInclude Include="tiny_obj_loader.h">
-      <Filter>ext</Filter>
-    </ClInclude>
     <ClInclude Include="MatrixStack.h" />
     <ClInclude Include="Particle.h" />
     <ClInclude Include="Program.h" />
@@ -35,5 +32,8 @@
     <ClInclude Include="Texture.h" />
     <ClInclude Include="WindowManager.h" />
     <ClInclude Include="GLSL.h" />
+    <ClInclude Include="..\ext\tiny_obj_loader\tiny_obj_loader.h">
+      <Filter>ext</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
