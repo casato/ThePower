@@ -9,7 +9,7 @@
 #include <memory>
 #include <glm/glm.hpp>
 
-#include "tiny_obj_loader.h"
+#include <tiny_obj_loader/tiny_obj_loader.h>
 
 class Program;
 
