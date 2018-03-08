@@ -63,7 +63,7 @@ public:
 	float h = 0.01f;
 	glm::vec3 g = glm::vec3(0.0f, -0.01f, 0.0f);
 
-	float camRot;
+	float camRot = 0;
 
 
 	void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
@@ -137,7 +137,8 @@ public:
 			exit(1);
 		}
 		prog->addUniform("P");
-		prog->addUniform("MV");
+		prog->addUniform("V");
+		prog->addUniform("M");
 		prog->addUniform("alphaTexture");
 		prog->addAttribute("vertPos");
 	}
@@ -252,17 +253,19 @@ public:
 
 		// Create the matrix stacks
 		auto P = make_shared<MatrixStack>();
-		auto MV = make_shared<MatrixStack>();
+		auto V = make_shared<MatrixStack>();
+		auto M = make_shared<MatrixStack>();
 		// Apply perspective projection.
 		P->pushMatrix();
 		P->perspective(45.0f, aspect, 0.01f, 100.0f);
 
-
-		MV->pushMatrix();
-		MV->loadIdentity();
-
 		// camera rotate
-		MV->rotate(camRot, vec3(0, 1, 0));
+		V->pushMatrix();
+		V->rotate(camRot, vec3(0, 1, 0));
+
+		M->pushMatrix();
+		M->loadIdentity();
+
 
 		// Draw
 		prog->bind();
@@ -271,7 +274,8 @@ public:
 
 		texture->bind(prog->getUniform("alphaTexture"));
 		CHECKED_GL_CALL(glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, value_ptr(P->topMatrix())));
-		CHECKED_GL_CALL(glUniformMatrix4fv(prog->getUniform("MV"), 1, GL_FALSE, value_ptr(MV->topMatrix())));
+		CHECKED_GL_CALL(glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, value_ptr(V->topMatrix())));
+		CHECKED_GL_CALL(glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, value_ptr(M->topMatrix())));
 
 		CHECKED_GL_CALL(glEnableVertexAttribArray(0));
 		CHECKED_GL_CALL(glBindBuffer(GL_ARRAY_BUFFER, pointsbuffer));
@@ -293,7 +297,8 @@ public:
 		prog->unbind();
 
 		// Pop matrix stacks.
-		MV->popMatrix();
+		M->popMatrix();
+		V->popMatrix();
 		P->popMatrix();
 	}
 
