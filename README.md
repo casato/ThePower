@@ -10,3 +10,6 @@ The particles attract to the ground or your cursor if the mouse button is presse
 
 Press E to toggle effects (glow, blur, none)
 Press C to toggle on/off collision detection
+
+Requires:
+glm, glfw
