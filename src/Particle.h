@@ -29,11 +29,16 @@ class Particle
 public:
 
 	void load();
-	void rebirth(float t);
+	void rebirth(float t, float xOrig, float yOrig);
 	void update(float t, float h, const glm::vec3 &g, const bool *keyToggles);
 	const vec3 &getPosition() const { return x; };
 	const vec3 &getVelocity() const { return v; };
 	const vec4 &getColor() const { return color; };
+	static void updateOrigin(float x, float y);
+	static void setGravity(bool grav);
+	void updatePositions(std::vector<std::shared_ptr<Particle>> particles);
+	static void setCollision(bool col);
+
 
 private:
 

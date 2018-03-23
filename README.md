@@ -1,12 +1,12 @@
+Clay Asato
+Final Project
+CSC 471
 
-Lab 10
-======
+"The Power"
 
-Building and running instructions can be found online [here][opengl-build-instructions]
-and a local offline version is included in this repo here: [build-instructions.md](build-instructions.md)
+A Physics-based desktop time killer
 
-Assignment details can be found [here][assignment-details].
+The particles attract to the ground or your cursor if the mouse button is pressed
 
-[opengl-build-instructions]: https://iondune.github.io/csc471/references/opengl-build
-[assignment-details]: https://iondune.github.io/csc471/assignments/lab10
-
+Press E to toggle effects (glow, blur, none)
+Press C to toggle on/off collision detection
